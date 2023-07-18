@@ -1,5 +1,6 @@
 import csv
 import configparser
+import os
 import pyautogui as pyg
 import pygame
 import time
@@ -9,7 +10,7 @@ import webbrowser
 
 from tkinter import filedialog, messagebox, ttk
 
-# 13 hours
+# 16 hours
 
 class App:
     def __init__(self):
@@ -54,11 +55,15 @@ class App:
         self.status_frame = tk.LabelFrame(self.window, text="Status")
         self.status_frame.place(height=40, width=433, relx=0.02, rely=0.82)
 
+        self.time_label = tk.Label(self.status_frame, text="Time elapsed: 0 mins 0 secs")
+        self.time_label.place(relx=0, rely=0)
+
+        self.failed_label = tk.Label(self.status_frame, text="Invaild Links: 0")
+        self.failed_label.place(relx=0.5, rely=0)
+
         self.row_label = tk.Label(self.status_frame, text="Current Row: ")
         self.row_label.place(relx=0.75, rely=0)
 
-        self.time_label = tk.Label(self.status_frame, text="Time elapsed: 0 mins 0 secs")
-        self.time_label.place(relx=0, rely=0)
 
         self.is_running = False
 
@@ -69,12 +74,17 @@ class App:
         parser.read('config.ini')
         chrome_path = parser.get('path', 'chrome_path')
         loom_path = parser.get('path', 'loom_path')
+        failed_counter = int(0)
+        failed_list = []
+
+        
         
         try: 
             if self.loaded_data:
                 self.start_timer()
                 self.start_button['state']="disabled"
                 self.stop_button['state']="normal"
+                # beginning
                 for data in self.loaded_data:
                     self.row_label['text']=f"Current Row: {data}"
                     url = data[1]
@@ -83,15 +93,20 @@ class App:
                     self.open_tab(url, chrome_path)
                     time.sleep(5)
                     pyg.hotkey("win", "up")
-
-                    
-                    subprocess.Popen(loom_path)
+                    if (pyg.locateCenterOnScreen("reload.png") is None):
+                        failed_list.append([data[1]])
+                        failed_counter = failed_counter + 1
+                        self.failed_label['text']=f"Invaild Links: {failed_counter}";
+                        continue
+                    # Check Loom
+                    self.launch_loom(loom_path)
 
 
 
 
  
                     pyg.hotkey("ctrl", "w")
+                # end 
 
         except:
              tk.messagebox.showerror("Error", "Please load files.")
@@ -99,6 +114,43 @@ class App:
     def open_tab(self, url: str, path: str):
         webbrowser.register('chrome', None, webbrowser.BackgroundBrowser(path))
         webbrowser.get('chrome').open_new(url)
+
+    def launch_loom(self, loom_path):
+        os.startfile(loom_path)
+        time.sleep(5)
+
+        # Loom setup
+        set_up_screen = pyg.locateCenterOnScreen('screen_only.png', confidence=0.95)
+        if set_up_screen:
+            pyg.click(set_up_screen)
+            time.sleep(1)
+            pyg.hotkey('down', 'enter')
+            time.sleep(1)
+        set_up_microphone = pyg.locateCenterOnScreen('microphone.png', confidence=0.95)
+        if set_up_microphone:
+            pyg.click(set_up_microphone)
+            time.sleep(1)
+        
+        full_screen = pyg.locateCenterOnScreen('full_screen.png', confidence=0.95)
+        if full_screen:
+            pyg.click(full_screen)
+            pyg.hotkey('down', 'down', 'enter')
+        else:
+            start_recording = pyg.locateCenterOnScreen('recording.png', confidence=0.95)
+            pyg.click(start_recording)
+        time.sleep(1)
+        under_back_x, under_back_y = pyg.locateCenterOnScreen('back.png', confidence=0.95)
+        pyg.click(under_back_x, under_back_y + 50)
+        time.sleep(2)
+        
+        
+    def add_failed(self, url):
+        desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+
+        with open(desktop + '\\failed.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+
+            writer.writerows(url)
 
     # Opens File Explorer and Loads file
     def file_dialog(self, file):
@@ -126,6 +178,8 @@ class App:
             tk.messagebox.showerror("Error", "Invalid CSV file.")
         except FileNotFoundError:
             tk.messagebox.showerror("Error", f"Could not find file '{filename}.'")
+
+    
 
     def play_audio(self, file_path: str):
         pygame.mixer.init()
@@ -164,12 +218,9 @@ def close_tab():
     pyg.hotkey('ctrl', 'w')
 
 
-
 # if __name__ == "__main__":
 #     app=App()
-print("starting")
-play_audio('test.mp3')
-print("ending")
+
 # subprocess.Popen(loom_path)
 
 
@@ -178,8 +229,34 @@ print("ending")
     # close_tab()
 
 
+parser = configparser.ConfigParser()
+parser.read('config.ini')
+chrome_path = parser.get('path', 'chrome_path')
+loom_path = parser.get('path', 'loom_path')
+
+os.startfile(loom_path)
+time.sleep(1)
+# Microphone
+
+
+# screen
+# x, y = pyg.locateCenterOnScreen('screen_only.png', confidence=0.95)
+# pyg.click(x, y)
+# time.sleep(1)
+# pyg.hotkey('down', 'enter')
+# time.sleep(1)
+# x, y = pyg.locateCenterOnScreen('microphone.png', confidence=0.95)
+# pyg.click(x, y)
+
+# x, y = pyg.locateCenterOnScreen('full_screen.png', confidence=0.95)
+# pyg.click(x, y)
 
 
 
-# res = pyg.locateCenterOnScreen("recording.png")
+
+under_back_x, under_back_y = pyg.locateCenterOnScreen('back.png', confidence=0.95)
+pyg.click(under_back_x, under_back_y + 50)
+
+
+
 
