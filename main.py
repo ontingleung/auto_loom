@@ -5,12 +5,11 @@ import pyautogui as pyg
 import pygame
 import time
 import tkinter as tk
-import subprocess
 import webbrowser
 
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, ttk
 
-# 16 hours
+# 19 hours
 
 class App:
     def __init__(self):
@@ -43,10 +42,10 @@ class App:
         self.audio_label = ttk.Label(self.audiofile_frame, text="No File Selected")
         self.audio_label.place(relx=0, rely=0.15)
 
-        self.start_button = tk.Button(self.window, justify="center", text="Start (F6)", command=self.start)
+        self.start_button = tk.Button(self.window, justify="center", text="Start", command=self.start)
         self.start_button.place(height=58, width=175, relx=0.59, rely=0.05)
 
-        self.stop_button = tk.Button(self.window, justify="center", state="disabled", text="Stop (F6)")
+        self.stop_button = tk.Button(self.window, justify="center", state="disabled", text="Stop")
         self.stop_button.place(height=58, width=175, relx=0.59, rely=0.31)
 
         self.setting_button = tk.Button(self.window, justify="center", text="Settings", command=self.open_config)
@@ -61,9 +60,6 @@ class App:
         self.failed_label = tk.Label(self.status_frame, text="Invaild Links: 0")
         self.failed_label.place(relx=0.5, rely=0)
 
-        self.row_label = tk.Label(self.status_frame, text="Current Row: ")
-        self.row_label.place(relx=0.75, rely=0)
-
 
         self.is_running = False
 
@@ -74,11 +70,11 @@ class App:
         parser.read('config.ini')
         chrome_path = parser.get('path', 'chrome_path')
         loom_path = parser.get('path', 'loom_path')
+        button_link_url =  parser.get('add_link', 'button_link_url')
+        button_text =  parser.get('add_link', 'button_text')
         failed_counter = int(0)
         failed_list = []
 
-        
-        
         try: 
             if self.loaded_data:
                 self.start_timer()
@@ -86,30 +82,50 @@ class App:
                 self.stop_button['state']="normal"
                 # beginning
                 for data in self.loaded_data:
-                    self.row_label['text']=f"Current Row: {data}"
                     url = data[1]
                     owner_name = data[2]
                     # Window Setup
                     self.open_tab(url, chrome_path)
-                    time.sleep(5)
+                    time.sleep(7)
                     pyg.hotkey("win", "up")
-                    if (pyg.locateCenterOnScreen("reload.png") is None):
+                    if pyg.locateCenterOnScreen("reload.png"):
                         failed_list.append([data[1]])
                         failed_counter = failed_counter + 1
                         self.failed_label['text']=f"Invaild Links: {failed_counter}";
                         continue
                     # Check Loom
                     self.launch_loom(loom_path)
+                    time.sleep(5)
 
-
-
-
- 
-                    pyg.hotkey("ctrl", "w")
+                    # play audio
+                    self.play_audio(self.loaded_audio)
+                    time.sleep(1)
+                    pyg.hotkey('ctrl', 'shift', 'l')
+                    time.sleep(2)
+                    while not pyg.locateCenterOnScreen('loom_site.png', confidence=0.95):
+                        pass
+                    title_x, title_y = pyg.locateCenterOnScreen('loom_site.png', confidence=0.95)
+                    pyg.click(title_x + 150, title_y - 15)
+                    time.sleep(1)
+                    pyg.typewrite(owner_name)
+                    add_link = pyg.locateCenterOnScreen('add_link.png', confidence=.92)
+                    pyg.click(add_link)
+                    time.sleep(1)
+                    pyg.typewrite(button_link_url)
+                    pyg.press('tab')
+                    time.sleep(1)
+                    pyg.typewrite(button_text)
+                    pyg.scroll(-200)
+                    save_link = pyg.locateCenterOnScreen('save_link.png', confidence=0.9)
+                    pyg.click(save_link)
+                    time.sleep(2)
+                    self.close_tab()
+                    self.close_tab()
                 # end 
-
         except:
              tk.messagebox.showerror("Error", "Please load files.")
+
+        tk.messagebox.showinfo(title='Complete', message='Task complete.')
     
     def open_tab(self, url: str, path: str):
         webbrowser.register('chrome', None, webbrowser.BackgroundBrowser(path))
@@ -117,7 +133,8 @@ class App:
 
     def launch_loom(self, loom_path):
         os.startfile(loom_path)
-        time.sleep(5)
+        while not pyg.locateCenterOnScreen('loom_on.png', confidence=0.95):
+            pass
 
         # Loom setup
         set_up_screen = pyg.locateCenterOnScreen('screen_only.png', confidence=0.95)
@@ -125,11 +142,11 @@ class App:
             pyg.click(set_up_screen)
             time.sleep(1)
             pyg.hotkey('down', 'enter')
-            time.sleep(1)
+            time.sleep(2)
         set_up_microphone = pyg.locateCenterOnScreen('microphone.png', confidence=0.95)
         if set_up_microphone:
             pyg.click(set_up_microphone)
-            time.sleep(1)
+            time.sleep(2)
         
         full_screen = pyg.locateCenterOnScreen('full_screen.png', confidence=0.95)
         if full_screen:
@@ -138,11 +155,19 @@ class App:
         else:
             start_recording = pyg.locateCenterOnScreen('recording.png', confidence=0.95)
             pyg.click(start_recording)
+        while not pyg.locateCenterOnScreen('back.png', confidence=0.95):
+            pass
         time.sleep(1)
         under_back_x, under_back_y = pyg.locateCenterOnScreen('back.png', confidence=0.95)
         pyg.click(under_back_x, under_back_y + 50)
-        time.sleep(2)
-        
+        while not pyg.locateCenterOnScreen('start_record.png', confidence=0.90):
+            pass
+        pyg.hotkey('ctrl', 'shift', 'l')
+        while not pyg.locateCenterOnScreen('proceed.png', confidence=0.95):
+            pass
+        proceed = pyg.locateCenterOnScreen('proceed.png', confidence=0.95)
+        pyg.click(proceed)
+
         
     def add_failed(self, url):
         desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
@@ -161,6 +186,7 @@ class App:
             case 'Audio':
                 self.filename = filedialog.askopenfilename(initialdir="/", title="Select File", filetype=(("MP3 files", ".mp3"), ("wav files", ".wav"), ("All Files", "*.*")))
                 self.audio_label["text"] = self.filename
+                self.loaded_audio = self.filename
             case _:
                 return None
 
@@ -179,12 +205,24 @@ class App:
         except FileNotFoundError:
             tk.messagebox.showerror("Error", f"Could not find file '{filename}.'")
 
-    
-
     def play_audio(self, file_path: str):
         pygame.mixer.init()
         pygame.mixer_music.load(file_path)
         pygame.mixer.music.play()
+
+        focus_chrome = pyg.locateCenterOnScreen('chrome.png',grayscale=True, confidence=.9)
+        time.sleep(2)
+        pyg.click(focus_chrome)
+        pyg.moveTo(600, 600)
+
+        for i in range(30):
+            pyg.scroll(-80)
+
+        time.sleep(1)
+
+        for i in range(15):
+            pyg.scroll(300)
+            
 
         while pygame.mixer.music.get_busy():
             pygame.time.Clock().tick(300)
@@ -213,50 +251,16 @@ class App:
         webbrowser.open("config.ini")
         return None
 
-
-def close_tab():
-    pyg.hotkey('ctrl', 'w')
-
-
-# if __name__ == "__main__":
-#     app=App()
-
-# subprocess.Popen(loom_path)
+    def close_tab(self):
+        pyg.hotkey('ctrl', 'w')
 
 
-    # 
+if __name__ == "__main__":
+    app=App()
 
-    # close_tab()
-
-
-parser = configparser.ConfigParser()
-parser.read('config.ini')
-chrome_path = parser.get('path', 'chrome_path')
-loom_path = parser.get('path', 'loom_path')
-
-os.startfile(loom_path)
-time.sleep(1)
-# Microphone
-
-
-# screen
-# x, y = pyg.locateCenterOnScreen('screen_only.png', confidence=0.95)
-# pyg.click(x, y)
-# time.sleep(1)
-# pyg.hotkey('down', 'enter')
-# time.sleep(1)
-# x, y = pyg.locateCenterOnScreen('microphone.png', confidence=0.95)
-# pyg.click(x, y)
-
-# x, y = pyg.locateCenterOnScreen('full_screen.png', confidence=0.95)
-# pyg.click(x, y)
-
-
-
-
-under_back_x, under_back_y = pyg.locateCenterOnScreen('back.png', confidence=0.95)
-pyg.click(under_back_x, under_back_y + 50)
-
-
-
-
+# parser = configparser.ConfigParser()
+# parser.read('config.ini')
+# chrome_path = parser.get('path', 'chrome_path')
+# loom_path = parser.get('path', 'loom_path')
+# button_link_url =  parser.get('add_link', 'button_link_url')
+# button_text =  parser.get('add_link', 'button_text')
