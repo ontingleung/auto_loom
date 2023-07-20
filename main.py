@@ -9,7 +9,7 @@ import webbrowser
 
 from tkinter import filedialog, ttk
 
-# 19.5 hours
+
 
 class App:
     def __init__(self):
@@ -55,7 +55,7 @@ class App:
         self.time_label.place(relx=0, rely=0)
 
         self.failed_label = tk.Label(self.status_frame, text="Invaild Links: 0")
-        self.failed_label.place(relx=0.8, rely=0)
+        self.failed_label.place(relx=0.77, rely=0)
 
         self.is_running = False
 
@@ -70,6 +70,8 @@ class App:
         button_text =  parser.get('add_link', 'button_text')
         failed_counter = int(0)
         failed_list = []
+
+        self.stop()
 
         try: 
             if self.loaded_data:
@@ -121,31 +123,46 @@ class App:
              tk.messagebox.showerror("Error", "Please load files.")
 
             
-        self.stop()
+        
         tk.messagebox.showinfo(title='Complete', message='Task complete.')
         self.start_button['state']="normal"
+        
     
     def open_tab(self, url: str, path: str):
         webbrowser.register('chrome', None, webbrowser.BackgroundBrowser(path))
         webbrowser.get('chrome').open_new(url)
 
     def launch_loom(self, loom_path):
+        parser = configparser.ConfigParser()
+        parser.read('config.ini')
+
+        height = int(parser.get('screen_res', 'height'))
+        width = int(parser.get('screen_res', 'width'))
+
         os.startfile(loom_path)
         while not pyg.locateCenterOnScreen('resources/assets/loom_on.png', confidence=0.95):
             pass
 
         # Loom setup
+        time.sleep(3)
         set_up_screen = pyg.locateCenterOnScreen('resources/assets/screen_only.png', confidence=0.95)
         if set_up_screen:
             pyg.click(set_up_screen)
             time.sleep(1)
             pyg.hotkey('down', 'enter')
             time.sleep(2)
+        anti_virus = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+        if anti_virus:
+            anti_x, anti_y = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+            pyg.click(anti_x + 330, anti_y - 30)
+            time.sleep(2)
+
+        
         set_up_microphone = pyg.locateCenterOnScreen('resources/assets/microphone.png', confidence=0.95)
         if set_up_microphone:
             pyg.click(set_up_microphone)
             time.sleep(2)
-        
+        time.sleep(1)
         full_screen = pyg.locateCenterOnScreen('resources/assets/full_screen.png', confidence=0.95)
         if full_screen:
             pyg.click(full_screen)
@@ -158,6 +175,29 @@ class App:
         time.sleep(1)
         under_back_x, under_back_y = pyg.locateCenterOnScreen('resources/assets/back.png', confidence=0.95)
         pyg.click(under_back_x, under_back_y + 50)
+
+        time.sleep(2)
+        anti_virus_two = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+        if anti_virus_two:
+            anti_x, anti_y = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+            pyg.click(anti_x + 330, anti_y - 30)
+            time.sleep(2)
+        
+        time.sleep(2)
+        profile = pyg.locateCenterOnScreen('resources/v_assets/profile_pic.png', confidence=0.7)
+
+        if not profile:
+            sweep = 0.8
+            pyg.moveTo(width/16, height/1.1)
+            while not pyg.locateCenterOnScreen('resources/assets/loom_cam.png', confidence=0.9):
+                sweep = sweep + 0.04
+                pyg.moveTo(width/16, height/sweep)
+            loom_cam = pyg.locateCenterOnScreen('resources/assets/loom_cam.png', confidence=0.9)
+            pyg.moveTo(loom_cam)
+            cam_fix = pyg.locateCenterOnScreen('resources/assets/cam_fix.png', confidence=0.9)
+            pyg.click(cam_fix)
+            time.sleep(1)
+
         while not pyg.locateCenterOnScreen('resources/assets/start_record.png', confidence=0.90):
             pass
         pyg.hotkey('ctrl', 'shift', 'l')
@@ -252,13 +292,5 @@ class App:
     def close_tab(self):
         pyg.hotkey('ctrl', 'w')
 
-
 if __name__ == "__main__":
     app=App()
-
-# parser = configparser.ConfigParser()
-# parser.read('config.ini')
-# chrome_path = parser.get('path', 'chrome_path')
-# loom_path = parser.get('path', 'loom_path')
-# button_link_url =  parser.get('add_link', 'button_link_url')
-# button_text =  parser.get('add_link', 'button_text')
