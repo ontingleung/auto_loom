@@ -3,12 +3,22 @@ import configparser
 import os
 import pyautogui as pyg
 import pygame
+import sys
 import time
 import tkinter as tk
 import webbrowser
 
 from tkinter import filedialog, ttk
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS2
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 class App:
@@ -17,8 +27,8 @@ class App:
         # window setup
         self.window = tk.Tk()
         self.window.title("Auto Loom")
-        self.window.geometry("450x250")
-        self.window.iconbitmap("app.ico")
+        self.window.geometry("550x450")
+        self.window.iconbitmap(resource_path("resources\\assets\\icon.ico"))
         self.window.pack_propagate(False)
         self.window.resizable(0, 0)
 
@@ -63,11 +73,13 @@ class App:
 
     def start(self):
         parser = configparser.ConfigParser()
-        parser.read('config.ini')
+        parser.read(resource_path('resources\\config\\config.ini'))
         chrome_path = parser.get('path', 'chrome_path')
         loom_path = parser.get('path', 'loom_path')
         button_link_url =  parser.get('add_link', 'button_link_url')
         button_text =  parser.get('add_link', 'button_text')
+        height = int(parser.get('screen_res', 'height'))
+        width = int(parser.get('screen_res', 'width'))
         failed_counter = int(0)
         failed_list = []
 
@@ -85,7 +97,7 @@ class App:
                     self.open_tab(url, chrome_path)
                     time.sleep(7)
                     pyg.hotkey("win", "up")
-                    if pyg.locateCenterOnScreen("resources/assets/reload.png"):
+                    if pyg.locateCenterOnScreen(resource_path("resources\\assets\\reload.png")):
                         failed_list.append([data[1]])
                         failed_counter = failed_counter + 1
                         self.failed_label['text']=f"Invaild Links: {failed_counter}";
@@ -99,13 +111,13 @@ class App:
                     time.sleep(1)
                     pyg.hotkey('ctrl', 'shift', 'l')
                     time.sleep(3)
-                    while not pyg.locateCenterOnScreen('resources/assets/loom_site.png', confidence=0.95):
+                    while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_site.png'), confidence=0.86):
                         pass
-                    title_x, title_y = pyg.locateCenterOnScreen('resources/assets/loom_site.png', confidence=0.95)
+                    title_x, title_y = pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_site.png'), confidence=0.86)
                     pyg.click(title_x + 150, title_y - 15)
                     time.sleep(1)
                     pyg.typewrite(owner_name)
-                    add_link = pyg.locateCenterOnScreen('resources/assets/add_link.png', confidence=.92)
+                    add_link = pyg.locateCenterOnScreen(resource_path('resources\\assets\\add_link.png'), confidence=.90)
                     pyg.click(add_link)
                     time.sleep(1)
                     pyg.typewrite(button_link_url)
@@ -113,7 +125,9 @@ class App:
                     time.sleep(1)
                     pyg.typewrite(button_text)
                     pyg.scroll(-200)
-                    save_link = pyg.locateCenterOnScreen('resources/assets/save_link.png', confidence=0.9)
+                    while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\save_link.png'), confidence=0.9):
+                        pass
+                    save_link = pyg.locateCenterOnScreen(resource_path('resources\\assets\\save_link.png'), confidence=0.9)
                     pyg.click(save_link)
                     time.sleep(2)
                     self.close_tab()
@@ -134,76 +148,76 @@ class App:
 
     def launch_loom(self, loom_path):
         parser = configparser.ConfigParser()
-        parser.read('config.ini')
+        parser.read('resources\\config\\config.ini')
 
         height = int(parser.get('screen_res', 'height'))
         width = int(parser.get('screen_res', 'width'))
 
         os.startfile(loom_path)
-        while not pyg.locateCenterOnScreen('resources/assets/loom_on.png', confidence=0.95):
+        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_on.png'), confidence=0.8):
             pass
 
         # Loom setup
         time.sleep(3)
-        set_up_screen = pyg.locateCenterOnScreen('resources/assets/screen_only.png', confidence=0.95)
+        set_up_screen = pyg.locateCenterOnScreen(resource_path('resources\\assets\\screen_only.png'), confidence=0.8)
         if set_up_screen:
             pyg.click(set_up_screen)
             time.sleep(1)
             pyg.hotkey('down', 'enter')
             time.sleep(2)
-        anti_virus = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+        anti_virus = pyg.locateCenterOnScreen(resource_path('resources\\v_assets\\anti_v.png'), grayscale=True, confidence=0.7)
         if anti_virus:
-            anti_x, anti_y = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+            anti_x, anti_y = pyg.locateCenterOnScreen(resource_path('resources\\v_assets\\anti_v.png'), grayscale=True, confidence=0.7)
             pyg.click(anti_x + 330, anti_y - 30)
             time.sleep(2)
 
         
-        set_up_microphone = pyg.locateCenterOnScreen('resources/assets/microphone.png', confidence=0.95)
+        set_up_microphone = pyg.locateCenterOnScreen(resource_path('resources\\assets\\microphone.png'), confidence=0.8)
         if set_up_microphone:
             pyg.click(set_up_microphone)
             time.sleep(2)
         time.sleep(1)
-        full_screen = pyg.locateCenterOnScreen('resources/assets/full_screen.png', confidence=0.95)
+        full_screen = pyg.locateCenterOnScreen(resource_path('resources\\assets\\full_screen.png'), confidence=0.8)
         if full_screen:
             pyg.click(full_screen)
             pyg.hotkey('down', 'down', 'enter')
         else:
-            start_recording = pyg.locateCenterOnScreen('resources/assets/recording.png', confidence=0.95)
+            start_recording = pyg.locateCenterOnScreen(resource_path('resources\\assets\\recording.png'), confidence=0.8)
             pyg.click(start_recording)
-        while not pyg.locateCenterOnScreen('resources/assets/back.png', confidence=0.95):
+        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\back.png'), confidence=0.8):
             pass
         time.sleep(1)
-        under_back_x, under_back_y = pyg.locateCenterOnScreen('resources/assets/back.png', confidence=0.95)
-        pyg.click(under_back_x, under_back_y + 50)
+        under_back_x, under_back_y = pyg.locateCenterOnScreen(resource_path('resources\\assets\\back.png'), confidence=0.8)
+        pyg.click(under_back_x, under_back_y + 70)
 
         time.sleep(2)
-        anti_virus_two = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+        anti_virus_two = pyg.locateCenterOnScreen(resource_path('resources\\v_assets\\anti_v.png'), grayscale=True, confidence=0.7)
         if anti_virus_two:
-            anti_x, anti_y = pyg.locateCenterOnScreen('resources/v_assets/anti_v.png', grayscale=True, confidence=0.7)
+            anti_x, anti_y = pyg.locateCenterOnScreen(resource_path('resources\\v_assets\\anti_v.png'), grayscale=True, confidence=0.7)
             pyg.click(anti_x + 330, anti_y - 30)
             time.sleep(2)
         
         time.sleep(2)
-        profile = pyg.locateCenterOnScreen('resources/v_assets/profile_pic.png', confidence=0.7)
+        profile = pyg.locateCenterOnScreen(resource_path('resources\\v_assets\\profile_pic.png'), confidence=0.7)
 
         if not profile:
             sweep = 0.8
             pyg.moveTo(width/16, height/1.1)
-            while not pyg.locateCenterOnScreen('resources/assets/loom_cam.png', confidence=0.9):
+            while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_cam.png'), confidence=0.8):
                 sweep = sweep + 0.04
                 pyg.moveTo(width/16, height/sweep)
-            loom_cam = pyg.locateCenterOnScreen('resources/assets/loom_cam.png', confidence=0.9)
+            loom_cam = pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_cam.png'), confidence=0.8)
             pyg.moveTo(loom_cam)
-            cam_fix = pyg.locateCenterOnScreen('resources/assets/cam_fix.png', confidence=0.9)
+            cam_fix = pyg.locateCenterOnScreen(resource_path('resources\\assets\\cam_fix.png'), confidence=0.8)
             pyg.click(cam_fix)
             time.sleep(1)
 
-        while not pyg.locateCenterOnScreen('resources/assets/start_record.png', confidence=0.90):
+        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\start_record.png'), confidence=0.90):
             pass
         pyg.hotkey('ctrl', 'shift', 'l')
-        while not pyg.locateCenterOnScreen('resources/assets/proceed.png', confidence=0.95):
+        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\proceed.png'), confidence=0.8):
             pass
-        proceed = pyg.locateCenterOnScreen('resources/assets/proceed.png', confidence=0.95)
+        proceed = pyg.locateCenterOnScreen(resource_path('resources\\assets\\proceed.png'), confidence=0.8)
         pyg.click(proceed)
 
         
@@ -248,7 +262,7 @@ class App:
         pygame.mixer_music.load(file_path)
         pygame.mixer.music.play()
 
-        focus_chrome = pyg.locateCenterOnScreen('resources/assets/chrome.png',grayscale=True, confidence=.9)
+        focus_chrome = pyg.locateCenterOnScreen(resource_path('resources\\assets\\chrome.png'),grayscale=True, confidence=.8)
         time.sleep(2)
         pyg.click(focus_chrome)
         pyg.moveTo(600, 600)
@@ -286,11 +300,12 @@ class App:
             self.time_label.after(50, self.update_time)
 
     def open_config(self):
-        webbrowser.open("config.ini")
+        webbrowser.open(resource_path("resources\\config\\config.ini"))
         return None
 
     def close_tab(self):
         pyg.hotkey('ctrl', 'w')
 
-if __name__ == "__main__":
-    app=App()
+app=App()
+
+# pass: RoXyNuMbA1
