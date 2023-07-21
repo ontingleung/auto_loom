@@ -7,8 +7,8 @@ import sys
 import time
 import tkinter as tk
 import webbrowser
-
 from tkinter import filedialog, ttk
+from ttkthemes import ThemedStyle
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -23,53 +23,56 @@ def resource_path(relative_path):
 
 class App:
     def __init__(self):
-        
-        # window setup
         self.window = tk.Tk()
         self.window.title("Auto Loom")
-        self.window.geometry("550x450")
+        self.window.geometry("800x700")
         self.window.iconbitmap(resource_path("resources\\assets\\icon.ico"))
-        self.window.pack_propagate(False)
-        self.window.resizable(0, 0)
+        self.window.resizable(False, False)
+        self.window.configure(bg="navy") 
 
-        # CVS File Frame
-        self.csvfile_frame = tk.LabelFrame(self.window, text="CSV File")
-        self.csvfile_frame.place(height=100, width=250, relx=0.02, rely=0.02)
-      
+        self.style = ThemedStyle(self.window)
+        self.style.theme_use('arc')  # Using the 'arc' theme from ttkthemes
+
+        self.setup_ui()
+        self.is_running = False
+
+        self.window.mainloop()
+
+    def setup_ui(self):
+        # CSV File Frame
+        self.csvfile_frame = ttk.LabelFrame(self.window, text="CSV File")
+        self.csvfile_frame.place(height=270, width=500, relx=0.02, rely=0.02)
+
         # Audio File Frame
-        self.audiofile_frame = tk.LabelFrame(self.window, text="Audio File")
-        self.audiofile_frame.place(height=100, width=250, relx=0.02, rely=0.42)
+        self.audiofile_frame = ttk.LabelFrame(self.window, text="Audio File")
+        self.audiofile_frame.place(height=270, width=500, relx=0.02, rely=0.42)
 
         # CSV Button
-        self.load_csv_button = tk.Button(self.csvfile_frame, text="Load File", command=lambda file="CSV": self.file_dialog(file))
+        self.load_csv_button = ttk.Button(self.csvfile_frame, text="Load CSV", command=lambda: self.file_dialog("CSV"))
         self.load_csv_button.place(relx=0.7, rely=0.5)
         self.csv_label = ttk.Label(self.csvfile_frame, text="No File Selected")
         self.csv_label.place(relx=0, rely=0.15)
 
-        # Audio Button 
-        self.load_audio_button = tk.Button(self.audiofile_frame, text="Load File", command=lambda file="Audio": self.file_dialog(file))
+        # Audio Button
+        self.load_audio_button = ttk.Button(self.audiofile_frame, text="Load Audio", command=lambda: self.file_dialog("Audio"))
         self.load_audio_button.place(relx=0.7, rely=0.5)
         self.audio_label = ttk.Label(self.audiofile_frame, text="No File Selected")
         self.audio_label.place(relx=0, rely=0.15)
 
-        self.start_button = tk.Button(self.window, justify="center", text="Start", command=self.start)
-        self.start_button.place(height=92, width=175, relx=0.59, rely=0.05)
+        self.start_button = ttk.Button(self.window, text="Start", command=self.start)
+        self.start_button.place(height=268, width=255, relx=0.663, rely=0.02)
 
-        self.setting_button = tk.Button(self.window, justify="center", text="Settings", command=self.open_config)
-        self.setting_button.place(height=92, width=175, relx=0.59, rely=0.45)
+        self.setting_button = ttk.Button(self.window, text="Settings", command=self.open_config)
+        self.setting_button.place(height=268, width=255, relx=0.663, rely=0.422)
 
-        self.status_frame = tk.LabelFrame(self.window, text="Status")
-        self.status_frame.place(height=40, width=433, relx=0.02, rely=0.82)
+        self.status_frame = ttk.LabelFrame(self.window, text="Status")
+        self.status_frame.place(height=100, width=770, relx=0.02, rely=0.82)
 
-        self.time_label = tk.Label(self.status_frame, text="Time elapsed: 0 mins 0 secs")
+        self.time_label = ttk.Label(self.status_frame, text="Time elapsed: 0 mins 0 secs")
         self.time_label.place(relx=0, rely=0)
 
-        self.failed_label = tk.Label(self.status_frame, text="Invaild Links: 0")
+        self.failed_label = ttk.Label(self.status_frame, text="Invalid Links: 0")
         self.failed_label.place(relx=0.77, rely=0)
-
-        self.is_running = False
-
-        self.window.mainloop()
 
     def start(self):
         parser = configparser.ConfigParser()
@@ -78,8 +81,6 @@ class App:
         loom_path = parser.get('path', 'loom_path')
         button_link_url =  parser.get('add_link', 'button_link_url')
         button_text =  parser.get('add_link', 'button_text')
-        height = int(parser.get('screen_res', 'height'))
-        width = int(parser.get('screen_res', 'width'))
         failed_counter = int(0)
         failed_list = []
 
@@ -96,7 +97,10 @@ class App:
                     # Window Setup
                     self.open_tab(url, chrome_path)
                     time.sleep(7)
-                    pyg.hotkey("win", "up")
+                    if pyg.locateCenterOnScreen(resource_path("resources\\assets\\max_fullscreen.png"), confidence=.9):
+                        max_screen = pyg.locateCenterOnScreen(resource_path("resources\\assets\\max_fullscreen.png"), confidence=.9)
+                        pyg.click(max_screen)
+                    time.sleep(1)
                     if pyg.locateCenterOnScreen(resource_path("resources\\assets\\reload.png")):
                         failed_list.append([data[1]])
                         failed_counter = failed_counter + 1
@@ -111,11 +115,20 @@ class App:
                     time.sleep(1)
                     pyg.hotkey('ctrl', 'shift', 'l')
                     time.sleep(3)
+                    duration = 10
+                    start_time = time.time()
                     while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_site.png'), confidence=0.86):
-                        pass
+                        current_time = time.time()
+                        elapsed_time = current_time - start_time
+                        if elapsed_time >= duration:
+                            refresh = pyg.locateCenterOnScreen(resource_path('resources\\assets\\refresh.png'), confidence=0.9)
+                            pyg.click(refresh)
+                            time.sleep(5)
+                            break
+
                     title_x, title_y = pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_site.png'), confidence=0.86)
-                    pyg.click(title_x + 150, title_y - 15)
-                    time.sleep(1)
+                    pyg.click(title_x + 150, title_y - 18)
+                    time.sleep(3)
                     pyg.typewrite(owner_name)
                     add_link = pyg.locateCenterOnScreen(resource_path('resources\\assets\\add_link.png'), confidence=.90)
                     pyg.click(add_link)
@@ -154,12 +167,12 @@ class App:
         width = int(parser.get('screen_res', 'width'))
 
         os.startfile(loom_path)
-        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_on.png'), confidence=0.8):
+        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\loom_on.png'), confidence=0.9):
             pass
 
         # Loom setup
         time.sleep(3)
-        set_up_screen = pyg.locateCenterOnScreen(resource_path('resources\\assets\\screen_only.png'), confidence=0.8)
+        set_up_screen = pyg.locateCenterOnScreen(resource_path('resources\\assets\\screen_only.png'), confidence=0.9)
         if set_up_screen:
             pyg.click(set_up_screen)
             time.sleep(1)
@@ -172,22 +185,22 @@ class App:
             time.sleep(2)
 
         
-        set_up_microphone = pyg.locateCenterOnScreen(resource_path('resources\\assets\\microphone.png'), confidence=0.8)
+        set_up_microphone = pyg.locateCenterOnScreen(resource_path('resources\\assets\\microphone.png'), confidence=0.75)
         if set_up_microphone:
             pyg.click(set_up_microphone)
             time.sleep(2)
         time.sleep(1)
-        full_screen = pyg.locateCenterOnScreen(resource_path('resources\\assets\\full_screen.png'), confidence=0.8)
+        full_screen = pyg.locateCenterOnScreen(resource_path('resources\\assets\\full_screen.png'), confidence=0.9)
         if full_screen:
             pyg.click(full_screen)
             pyg.hotkey('down', 'down', 'enter')
         else:
-            start_recording = pyg.locateCenterOnScreen(resource_path('resources\\assets\\recording.png'), confidence=0.8)
+            start_recording = pyg.locateCenterOnScreen(resource_path('resources\\assets\\recording.png'), confidence=0.9)
             pyg.click(start_recording)
-        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\back.png'), confidence=0.8):
+        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\back.png'), confidence=0.9):
             pass
         time.sleep(1)
-        under_back_x, under_back_y = pyg.locateCenterOnScreen(resource_path('resources\\assets\\back.png'), confidence=0.8)
+        under_back_x, under_back_y = pyg.locateCenterOnScreen(resource_path('resources\\assets\\back.png'), confidence=0.9)
         pyg.click(under_back_x, under_back_y + 70)
 
         time.sleep(2)
@@ -198,7 +211,7 @@ class App:
             time.sleep(2)
         
         time.sleep(2)
-        profile = pyg.locateCenterOnScreen(resource_path('resources\\v_assets\\profile_pic.png'), confidence=0.7)
+        profile = pyg.locateCenterOnScreen(resource_path('resources\\v_assets\\profile_pic.png'), confidence=0.8)
 
         if not profile:
             sweep = 0.8
@@ -212,7 +225,7 @@ class App:
             pyg.click(cam_fix)
             time.sleep(1)
 
-        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\start_record.png'), confidence=0.90):
+        while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\start_record.png'), confidence=0.9):
             pass
         pyg.hotkey('ctrl', 'shift', 'l')
         while not pyg.locateCenterOnScreen(resource_path('resources\\assets\\proceed.png'), confidence=0.8):
@@ -308,4 +321,3 @@ class App:
 
 app=App()
 
-# pass: RoXyNuMbA1
